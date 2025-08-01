@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: travel-agent-config
+  namespace: travel-agent-system
+data:
+  # Agent Ports
+  ORCHESTRATOR_AGENT_PORT: "10001"
+  HOTEL_AGENT_PORT: "10010"
+  TRANSPORT_AGENT_PORT: "10011"
+  ACTIVITY_AGENT_PORT: "10012"
+  BUDGET_AGENT_PORT: "10013"
+  ITINERARY_AGENT_PORT: "10014"
+  
+  # Agent URLs (internal service names)
+  HOTEL_AGENT_URL: "http://hotel-agent-service:10010"
+  TRANSPORT_AGENT_URL: "http://transport-agent-service:10011"
+  ACTIVITY_AGENT_URL: "http://activity-agent-service:10012"
+  BUDGET_AGENT_URL: "http://budget-agent-service:10013"
+  ITINERARY_AGENT_URL: "http://itinerary-agent-service:10014"
+  
+  # Database Configuration
+  DATABASE_HOST: "postgres-service"
+  DATABASE_PORT: "5432"
+  DATABASE_NAME: "travel_agent_db"
+  
+  # Redis Configuration
+  REDIS_HOST: "redis-service"
+  REDIS_PORT: "6379"
+  
+  # Feature Flags
+  ENABLE_CACHING: "true"
+  ENABLE_RATE_LIMITING: "true"
+  ENABLE_METRICS: "true"
+  ENABLE_TRACING: "true"
+  
+  # Rate Limiting
+  RATE_LIMIT_PER_MINUTE: "60"
+  RATE_LIMIT_PER_HOUR: "1000"

@@ -14,11 +14,12 @@ from a2a.types import (
     SendMessageSuccessResponse,
     Task,
 )
-from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import create_react_agent
 from langchain_core.tools import tool
 from pydantic import BaseModel, Field
+
+from ...shared.llm_config import LLMConfig
 
 from .remote_agent_connection import RemoteAgentManager
 from .tools import TaskAnalyzer, ConflictResolver, DependencyManager
@@ -87,7 +88,7 @@ Important:
 - Keep the user informed of progress"""
     
     def __init__(self, remote_agent_urls: List[str]):
-        self.model = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
+        self.model = LLMConfig.get_agent_llm("orchestrator")
         self.remote_manager = RemoteAgentManager()
         self.task_analyzer = TaskAnalyzer()
         self.conflict_resolver = ConflictResolver()
