@@ -10,12 +10,12 @@ import uuid
 
 from langchain_core.messages import AIMessage, ToolMessage
 from langchain_core.tools import tool
-from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.prebuilt import create_react_agent
 from pydantic import BaseModel, Field
 
 from .tools import HotelSearchAPI, HotelRanker, HotelValidator
+from ...shared.llm_config import LLMConfig
 
 
 memory = MemorySaver()
@@ -132,7 +132,7 @@ Always structure your response with:
 Remember: You're part of a larger travel planning system. Focus only on accommodation needs."""
     
     def __init__(self):
-        self.model = ChatGoogleGenerativeAI(model="gemini-2.0-flash")
+        self.model = LLMConfig.get_agent_llm("hotel")
         self.tools = [search_hotels]
         
         self.graph = create_react_agent(

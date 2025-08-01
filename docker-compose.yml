@@ -1,0 +1,228 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: travel_agent
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secure_password}
+      POSTGRES_DB: travel_agent_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U travel_agent"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for caching and state
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Hotel Agent
+  hotel-agent:
+    build:
+      context: .
+      target: hotel-agent
+    ports:
+      - "10010:10010"
+    environment:
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - HOTEL_AGENT_PORT=10010
+      - DATABASE_URL=postgresql://travel_agent:${DB_PASSWORD:-secure_password}@postgres:5432/travel_agent_db
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:10010/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Transport Agent
+  transport-agent:
+    build:
+      context: .
+      target: transport-agent
+    ports:
+      - "10011:10011"
+    environment:
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - TRANSPORT_AGENT_PORT=10011
+      - DATABASE_URL=postgresql://travel_agent:${DB_PASSWORD:-secure_password}@postgres:5432/travel_agent_db
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:10011/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Activity Agent
+  activity-agent:
+    build:
+      context: .
+      target: activity-agent
+    ports:
+      - "10012:10012"
+    environment:
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - ACTIVITY_AGENT_PORT=10012
+      - DATABASE_URL=postgresql://travel_agent:${DB_PASSWORD:-secure_password}@postgres:5432/travel_agent_db
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:10012/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Budget Agent
+  budget-agent:
+    build:
+      context: .
+      target: budget-agent
+    ports:
+      - "10013:10013"
+    environment:
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - BUDGET_AGENT_PORT=10013
+      - DATABASE_URL=postgresql://travel_agent:${DB_PASSWORD:-secure_password}@postgres:5432/travel_agent_db
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:10013/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Itinerary Agent
+  itinerary-agent:
+    build:
+      context: .
+      target: itinerary-agent
+    ports:
+      - "10014:10014"
+    environment:
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - ITINERARY_AGENT_PORT=10014
+      - DATABASE_URL=postgresql://travel_agent:${DB_PASSWORD:-secure_password}@postgres:5432/travel_agent_db
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:10014/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Orchestrator Agent (depends on all other agents)
+  orchestrator-agent:
+    build:
+      context: .
+      target: orchestrator-agent
+    ports:
+      - "10001:10001"
+    environment:
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - ORCHESTRATOR_AGENT_PORT=10001
+      # Agent URLs for internal Docker network
+      - HOTEL_AGENT_URL=http://hotel-agent:10010
+      - TRANSPORT_AGENT_URL=http://transport-agent:10011
+      - ACTIVITY_AGENT_URL=http://activity-agent:10012
+      - BUDGET_AGENT_URL=http://budget-agent:10013
+      - ITINERARY_AGENT_URL=http://itinerary-agent:10014
+      - DATABASE_URL=postgresql://travel_agent:${DB_PASSWORD:-secure_password}@postgres:5432/travel_agent_db
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      hotel-agent:
+        condition: service_healthy
+      transport-agent:
+        condition: service_healthy
+      activity-agent:
+        condition: service_healthy
+      budget-agent:
+        condition: service_healthy
+      itinerary-agent:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:10001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Nginx reverse proxy (optional, for production)
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certs:/etc/nginx/certs:ro
+    depends_on:
+      - orchestrator-agent
+    profiles:
+      - production
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  default:
+    name: travel-agent-network

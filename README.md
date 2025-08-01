@@ -74,6 +74,9 @@ The system implements a distributed multi-agent architecture:
 
 - Python 3.8 or higher
 - Virtual environment (recommended)
+- Google Gemini API key (or Anthropic/OpenAI API key)
+
+> **Quick Setup**: See [GEMINI_SETUP.md](GEMINI_SETUP.md) for detailed Gemini API configuration.
 
 ### Installation
 
@@ -102,6 +105,16 @@ pip install -r requirements.txt
 ```bash
 cp .env.example .env
 # Edit .env with your API keys
+```
+
+5. Configure your Gemini API key:
+   - Get your key from: https://makersuite.google.com/app/apikey
+   - Add to .env: `GOOGLE_API_KEY=your_key_here`
+   - See [GEMINI_SETUP.md](GEMINI_SETUP.md) for detailed instructions
+
+6. Verify system readiness:
+```bash
+python check_system.py
 ```
 
 ### Running the System

@@ -12,6 +12,8 @@ from a2a.types import (
     TaskArtifactUpdateEvent,
     TaskStatusUpdateEvent,
 )
+import os
+from ...security.auth import A2ASecurityMiddleware
 
 
 TaskCallbackArg = Task | TaskStatusUpdateEvent | TaskArtifactUpdateEvent
@@ -21,17 +23,30 @@ TaskUpdateCallback = Callable[[TaskCallbackArg, AgentCard], Task]
 class RemoteAgentConnection:
     """A class to hold the connection to a remote agent."""
     
-    def __init__(self, agent_card: AgentCard, agent_url: str):
+    def __init__(self, agent_card: AgentCard, agent_url: str, service_id: str = "orchestrator"):
         print(f"Connecting to agent: {agent_card.info.name}")
         print(f"Agent URL: {agent_url}")
         
-        self._httpx_client = httpx.AsyncClient(timeout=30)
+        # Create security middleware
+        self.security = A2ASecurityMiddleware(service_id)
+        
+        # Create HTTP client with security headers
+        self._httpx_client = httpx.AsyncClient(
+            timeout=30,
+            event_hooks={"request": [self._add_security_headers]}
+        )
         self.agent_client = A2AClient(self._httpx_client, agent_card, url=agent_url)
         self.card = agent_card
         self.url = agent_url
         self.conversation_name = None
         self.conversation = None
         self.pending_tasks = set()
+    
+    async def _add_security_headers(self, request):
+        """Add security headers to outgoing requests."""
+        headers = dict(request.headers)
+        headers = await self.security.add_auth_header(headers)
+        request.headers = httpx.Headers(headers)
     
     def get_agent(self) -> AgentCard:
         """Get the agent card."""
@@ -63,17 +78,28 @@ class RemoteAgentManager:
         self.connections: Dict[str, RemoteAgentConnection] = {}
         self.agent_urls: Dict[str, str] = {}
     
-    async def add_agent(self, agent_url: str) -> Optional[RemoteAgentConnection]:
+    async def add_agent(self, agent_url: str, service_id: str = "orchestrator") -> Optional[RemoteAgentConnection]:
         """Add a remote agent by URL."""
         try:
+            # Create security middleware for the request
+            security = A2ASecurityMiddleware(service_id)
+            
             # Create temporary client to get agent card
-            async with httpx.AsyncClient(timeout=30) as client:
+            async def add_auth_headers(request):
+                headers = dict(request.headers)
+                headers = await security.add_auth_header(headers)
+                request.headers = httpx.Headers(headers)
+            
+            async with httpx.AsyncClient(
+                timeout=30,
+                event_hooks={"request": [add_auth_headers]}
+            ) as client:
                 from a2a.client import A2ACardResolver
                 card_resolver = A2ACardResolver(client, agent_url)
                 card = await card_resolver.get_agent_card()
             
-            # Create connection
-            connection = RemoteAgentConnection(card, agent_url)
+            # Create connection with security
+            connection = RemoteAgentConnection(card, agent_url, service_id)
             agent_name = connection.get_agent_name()
             
             self.connections[agent_name] = connection

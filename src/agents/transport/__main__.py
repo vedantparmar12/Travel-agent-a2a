@@ -1,5 +1,5 @@
 """
-Hotel Agent A2A Server.
+Transport Agent A2A Server.
 """
 import asyncio
 import logging
@@ -23,8 +23,8 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-from .agent_executor import HotelAgentExecutor
-from ...security.auth import security_manager, get_ssl_context, A2ASecurityMiddleware, require_api_key, rate_limit
+from .agent_executor import TransportAgentExecutor
+from ...security.auth import security_manager, get_ssl_context, A2ASecurityMiddleware
 
 
 load_dotenv()
@@ -34,29 +34,29 @@ logger = logging.getLogger(__name__)
 
 # Agent metadata
 AGENT_INFO = AgentInfo(
-    name="Hotel_Agent",
+    name="Transport_Agent",
     description=(
-        "I'm a specialized hotel booking agent that helps find and book accommodations. "
-        "I can search for hotels based on destination, dates, budget, and guest preferences. "
-        "I provide detailed comparisons and recommendations for the best options."
+        "I'm a specialized transport booking agent that helps arrange flights, trains, "
+        "and ground transportation. I can search for the best routes, compare prices, "
+        "and suggest alternative transport modes based on your journey needs."
     ),
     welcome_message=(
-        "Hello! I'm the Hotel Agent. I'll help you find the perfect accommodation "
-        "for your trip. Just let me know your destination, dates, budget, and any "
-        "special preferences you have."
+        "Hello! I'm the Transport Agent. I'll help you find the best way to reach "
+        "your destination. Whether you need flights, trains, or other transport, "
+        "I'll search for options that fit your schedule and budget."
     ),
     instructions=[
-        "Provide your destination city",
-        "Specify check-in and check-out dates", 
-        "Tell me your budget and number of guests",
-        "Share any special requirements (location preference, amenities, etc.)"
+        "Tell me your origin and destination cities",
+        "Specify your travel dates (departure and return if applicable)",
+        "Share your budget and number of travelers",
+        "Let me know any preferences (direct flights, specific airlines, etc.)"
     ],
-    tools=["search_hotels", "rank_hotels", "validate_availability"],
+    tools=["search_flights", "compare_transport_modes", "check_schedules"],
     conversation_starters=[
-        "Find hotels in Paris for next weekend",
-        "I need a business hotel in New York for 3 nights",
-        "Search for family-friendly resorts in Orlando",
-        "What are the best budget hotels in Tokyo?",
+        "Find flights from New York to Paris next month",
+        "I need a round trip to Tokyo for 2 people",
+        "What's the best way to get from London to Amsterdam?",
+        "Search for business class flights to Singapore",
     ],
 )
 
@@ -69,8 +69,8 @@ def get_conversation_info() -> ConversationInfo:
             ConversationParticipant(
                 role=ConversationRole.ASSISTANT,
                 metadata=ConversationMetadata(
-                    display_name="Hotel Agent",
-                    description="Your personal hotel booking assistant",
+                    display_name="Transport Agent",
+                    description="Your personal travel transport assistant",
                 ),
             )
         ]
@@ -94,7 +94,7 @@ def create_app(
     )
     
     # Create executor
-    agent_executor = HotelAgentExecutor()
+    agent_executor = TransportAgentExecutor()
     
     # Create task store
     task_store = InMemoryTaskStore()
@@ -151,14 +151,14 @@ class SecurityMiddleware(BaseHTTPMiddleware):
 app = create_app()
 
 # Add security middleware
-app.add_middleware(SecurityMiddleware, service_id="hotel")
+app.add_middleware(SecurityMiddleware, service_id="transport")
 
 
 if __name__ == "__main__":
-    port = int(os.getenv("HOTEL_AGENT_PORT", "10010"))
+    port = int(os.getenv("TRANSPORT_AGENT_PORT", "10011"))
     use_ssl = os.getenv("USE_SSL", "false").lower() == "true"
     
-    logger.info(f"Starting Hotel Agent on port {port}")
+    logger.info(f"Starting Transport Agent on port {port}")
     logger.info(f"Agent: {AGENT_INFO.name}")
     logger.info(f"Description: {AGENT_INFO.description}")
     logger.info(f"SSL/TLS: {'Enabled' if use_ssl else 'Disabled'}")

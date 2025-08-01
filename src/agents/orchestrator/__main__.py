@@ -24,8 +24,12 @@ from a2a.server.events.event_queue import EventQueue
 from a2a.server.tasks import TaskUpdater
 from a2a.utils.errors import ServerError
 from dotenv import load_dotenv
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+from starlette.responses import JSONResponse
 
 from .orchestrator_a2a import OrchestratorAgentA2A
+from ...security.auth import security_manager, get_ssl_context, A2ASecurityMiddleware
 
 
 load_dotenv()
@@ -189,6 +193,43 @@ def create_app() -> A2AStarletteApplication:
     return A2AStarletteApplication(request_handler=request_handler)
 
 
+# Security middleware
+class SecurityMiddleware(BaseHTTPMiddleware):
+    """Security middleware for agent endpoints."""
+    
+    def __init__(self, app, service_id: str):
+        super().__init__(app)
+        self.security = A2ASecurityMiddleware(service_id)
+    
+    async def dispatch(self, request: Request, call_next):
+        # Skip security for health check
+        if request.url.path == "/health":
+            return await call_next(request)
+        
+        # Verify incoming request
+        headers = dict(request.headers)
+        is_valid, requester = await self.security.verify_incoming_request(headers)
+        
+        if not is_valid:
+            return JSONResponse(
+                status_code=401,
+                content={"error": "Unauthorized"}
+            )
+        
+        # Add requester info to request state
+        request.state.requester = requester
+        
+        # Check rate limit
+        if not security_manager.check_rate_limit(requester or request.client.host):
+            return JSONResponse(
+                status_code=429,
+                content={"error": "Rate limit exceeded"}
+            )
+        
+        response = await call_next(request)
+        return response
+
+
 if __name__ == "__main__":
     import asyncio
     
@@ -198,12 +239,26 @@ if __name__ == "__main__":
     # Create app
     app = create_app()
     
+    # Add security middleware
+    app.add_middleware(SecurityMiddleware, service_id="orchestrator")
+    
     # Get port
     port = int(os.getenv("ORCHESTRATOR_AGENT_PORT", "10001"))
+    use_ssl = os.getenv("USE_SSL", "false").lower() == "true"
     
     logger.info(f"Starting Orchestrator Agent on port {port}")
     logger.info(f"Agent: {AGENT_INFO.name}")
+    logger.info(f"SSL/TLS: {'Enabled' if use_ssl else 'Disabled'}")
     logger.info(f"Connected agents: {list(orchestrator_agent.remote_manager.connections.keys())}")
+    
+    # Prepare SSL config if enabled
+    ssl_config = {}
+    if use_ssl:
+        ssl_context = get_ssl_context()
+        ssl_config = {
+            "ssl_keyfile": os.getenv("SSL_KEY_FILE", "certs/server.key"),
+            "ssl_certfile": os.getenv("SSL_CERT_FILE", "certs/server.crt"),
+        }
     
     # Run the server
     uvicorn.run(
@@ -211,4 +266,5 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=port,
         log_level="info",
+        **ssl_config
     )
