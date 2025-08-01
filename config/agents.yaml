@@ -1,0 +1,74 @@
+# Agent Configuration
+# Defines behavior and settings for each agent in the system
+
+orchestrator:
+  name: "Orchestrator Agent"
+  description: "Central coordinator for all travel planning agents"
+  settings:
+    max_conflict_retries: 3
+    human_escalation_timeout: 300  # seconds
+    task_distribution_strategy: "dependency_based"
+  
+hotel:
+  name: "Hotel Agent"
+  description: "Handles accommodation search and booking"
+  settings:
+    max_search_results: 20
+    default_rating_filter: 3.0
+    price_variation_threshold: 0.2  # 20% price variation acceptable
+    preferred_chains:
+      - "Hilton"
+      - "Marriott"
+      - "Hyatt"
+    search_radius_km: 10
+
+transport:
+  name: "Transport Agent"
+  description: "Books flights, trains, and ground transportation"
+  settings:
+    preferred_airlines: []
+    max_layovers: 2
+    min_layover_time: 60  # minutes
+    ground_transport_types:
+      - "taxi"
+      - "uber"
+      - "shuttle"
+      - "public_transport"
+
+activity:
+  name: "Activity Agent"
+  description: "Finds and books local experiences"
+  settings:
+    max_distance_from_hotel_km: 15
+    preferred_categories:
+      - "cultural"
+      - "adventure"
+      - "dining"
+      - "entertainment"
+    min_rating: 4.0
+    group_discount_threshold: 4  # people
+
+budget:
+  name: "Budget Agent"
+  description: "Monitors and validates all expenses"
+  settings:
+    alert_thresholds:
+      - 0.5   # Alert at 50% spent
+      - 0.75  # Alert at 75% spent
+      - 0.9   # Alert at 90% spent
+    require_approval_percentage: 0.2  # Require approval for expenses > 20% of budget
+    buffer_percentage: 0.1  # Keep 10% buffer
+    currency_conversion_api: "exchangerate-api"
+
+itinerary:
+  name: "Itinerary Agent"
+  description: "Creates final travel plans"
+  settings:
+    output_formats:
+      - "pdf"
+      - "ical"
+      - "google_calendar"
+      - "markdown"
+    include_maps: true
+    include_weather: true
+    language: "en"

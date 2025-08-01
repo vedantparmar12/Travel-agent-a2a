@@ -1,0 +1,57 @@
+# Core dependencies
+langgraph>=0.2.0
+langchain>=0.1.0
+langchain-anthropic>=0.1.0
+langchain-openai>=0.1.0
+langchain-community>=0.1.0
+langchain-google-genai>=1.0.0
+
+# A2A Protocol dependencies
+a2a>=0.1.0
+starlette>=0.31.0
+uvicorn>=0.24.0
+
+# Data validation and modeling
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+
+# Async and networking
+aiohttp>=3.9.0
+httpx>=0.25.0
+asyncio>=3.4.3
+
+# Environment and configuration
+python-dotenv>=1.0.0
+pyyaml>=6.0
+
+# Date and time handling
+python-dateutil>=2.8.2
+
+# Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-mock>=3.12.0
+
+# Development tools
+black>=23.0.0
+isort>=5.12.0
+flake8>=6.1.0
+mypy>=1.5.0
+
+# Logging and monitoring
+structlog>=23.1.0
+opentelemetry-api>=1.20.0
+opentelemetry-sdk>=1.20.0
+opentelemetry-instrumentation>=0.41b0
+
+# API integrations (mock versions for development)
+requests>=2.31.0
+beautifulsoup4>=4.12.0  # For parsing responses
+
+# State persistence
+redis>=5.0.0  # Optional for production
+sqlalchemy>=2.0.0  # For booking history
+
+# Utilities
+tenacity>=8.2.0  # For retry logic
+cachetools>=5.3.0  # For caching
